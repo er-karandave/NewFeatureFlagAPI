@@ -6,6 +6,10 @@ Target Framework: .NET 8.0 (LTS)
 Primary Project: HRMS (Human Resource Management System)
 Environment: Windows 10/11
 
+To run test cases in .net core 
+# Run tests with verbose output
+dotnet test --logger "console;verbosity=detailed"
+
 
 Phase 1: Pre-Installation & Requirements
 1.	System Update: Ensure Windows is fully updated (Settings > Windows Update).
@@ -83,3 +87,179 @@ Official Video References
 •	Complete Installation Walkthrough: YouTube: Visual Studio 2026 Step-by-Step Guide
 •	Setting up .NET 8 for Beginners: YouTube: .NET 8 Fundamentals
 •	Connecting SQL Server to VS 2026: YouTube: SQL Server Management in VS
+
+
+
+**Flow of the project**
+
+┌─────────────────────────────────────────────────────────┐
+│  STEP 1: Admin navigates to /roles/edit?role=Admin    │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│  STEP 2: Frontend loads data                           │
+│  • roleService.getRoleByName('Admin')                  │
+│  • featureService.loadFeatures()                       │
+│  • roleService.getRoleFeatures('Admin')                │
+│  • featureService.getRolePermissions('Admin')          │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│  STEP 3: Backend queries database                      │
+│  • SELECT FROM Users WHERE UserRole='Admin'            │
+│  • SELECT FROM Features                                │
+│  • SELECT FROM FeaturePermissions                      │
+│    WHERE AccessLevel='ROLE' AND AccessId='Admin'       │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│  STEP 4: Frontend displays UI                          │
+│  • Role info card (read-only)                          │
+│  • Users section (assign/remove)                       │
+│  • Features section (toggle switches)                  │
+│  • Permission breakdown table                          │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│  STEP 5: Admin toggles "Data Export" to GRANTED        │
+│  • Click toggle switch                                 │
+│  • toggleFeaturePermission(featureId=3, isGranted=false)│
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│  STEP 6: Frontend calls API                            │
+│  POST /api/featurepermissions/role/Admin/features/3    │
+│  Body: {}                                              │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│  STEP 7: Backend saves permission                      │
+│  INSERT INTO FeaturePermissions                        │
+│  (FeatureId, AccessLevel, AccessId, Val)               │
+│  VALUES (3, 'ROLE', 'Admin', 1)                        │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│  STEP 8: Frontend refreshes UI                         │
+│  • loadRolePermissions()                               │
+│  • Permission breakdown updates                        │
+│  • Toggle switch shows new state                       │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│  STEP 9: Any Admin user now has Data Export access     │
+│  • User logs in (Role='Admin')                         │
+│  • User accesses Data Export feature                   │
+│  • Backend resolves: ROLE level = GRANTED              │
+│  • Feature is accessible ✅                            │
+└─────────────────────────────────────────────────────────┘
+
+
+
+
+┌─────────────────────────────────────────────────────────┐
+│          PERMISSION BREAKDOWN PANEL                     │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  Feature: Data Export (FLT_DATA_003)                   │
+│                                                          │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │ 👤 User Level      [✓] Granted                 │   │
+│  │    (Specific user override)                     │   │
+│  ├─────────────────────────────────────────────────┤   │
+│  │ 👥 Role Level      [ ] Denied                  │   │
+│  │    (Role-based permission)                      │   │
+│  ├─────────────────────────────────────────────────┤   │
+│  │ 🌍 Region Level    [✓] Granted                 │   │
+│  │    (Geographic permission)                      │   │
+│  ├─────────────────────────────────────────────────┤   │
+│  │ 🌐 Global Level    [✓] Granted                 │   │
+│  │    (Default for everyone)                       │   │
+│  ├─────────────────────────────────────────────────┤   │
+│  │ EFFECTIVE: ✅ GRANTED (at User level)          │   │
+│  │ (Priority: User → Role → Region → Global)      │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                          │
+│  Each toggle updates FeaturePermissions table          │
+│  UI refreshes automatically after toggle               │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+
+
+**BackEnd Architecture**
+┌─────────────────────────────────────────────────────────┐
+│                    CONTROLLER LAYER                     │
+│  (FeatureController.cs)                                │
+│  - Receives HTTP requests                              │
+│  - Validates input                                     │
+│  - Returns HTTP responses (JSON)                       │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│                     SERVICE LAYER                       │
+│  (FeatureService.cs)                                   │
+│  - Business logic                                      │
+│  - Permission resolution                               │
+│  - Data transformation                                 │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│                   REPOSITORY LAYER                      │
+│  (FeaturePermissionRepository.cs)                      │
+│  - Database queries (ADO.NET)                          │
+│  - SQL execution                                       │
+│  - Data mapping                                        │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│                   DATABASE LAYER                        │
+│  (SQL Server - FeatureFlagDB)                          │
+│  - Users, Features, FeaturePermissions tables          │
+└─────────────────────────────────────────────────────────┘
+
+
+
+**Full stack Arachitecture**
+
+┌─────────────────────────────────────────────────────────┐
+│                   COMPONENT LAYER                       │
+│  (edit-role.ts, edit-role.html)                        │
+│  - UI rendering                                        │
+│  - User interactions                                   │
+│  - Signal-based reactivity                             │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│                     SERVICE LAYER                       │
+│  (features-service.ts, role-service.ts)                │
+│  - HTTP calls to backend                               │
+│  - Signal management                                   │
+│  - Data transformation                                 │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│                      HTTP LAYER                         │
+│  (Angular HttpClient)                                  │
+│  - REST API calls                                      │
+│  - Request/Response handling                           │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│                   BACKEND API                           │
+│  (.NET Core Web API)                                   │
+│  - Controllers, Services, Repositories                 │
+└─────────────────────────────────────────────────────────┘
