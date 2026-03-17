@@ -87,17 +87,53 @@ namespace FeatureFlagAPI.Services
             });
         }
 
+        //public async Task<bool> RemoveFeatureFromRoleAsync(string roleName, int featureId)
+        //{
+        //    var permission = await _permissionRepository.GetPermissionAsync(featureId, "ROLE", roleName);
+
+        //    if (permission != null)
+        //    {
+        //        return await _permissionRepository.DeletePermissionAsync(permission.Id);
+        //    }
+
+        //    return true;
+        //}
+
         public async Task<bool> RemoveFeatureFromRoleAsync(string roleName, int featureId)
         {
             var permission = await _permissionRepository.GetPermissionAsync(featureId, "ROLE", roleName);
 
             if (permission != null)
             {
-                return await _permissionRepository.DeletePermissionAsync(permission.Id);
+                var result = await _permissionRepository.DeletePermissionAsync(permission.Id);
+                return result; 
             }
 
             return true;
         }
+
+        //public async Task<bool> AssignFeatureToRoleAsync(string roleName, int featureId)
+        //{
+        //    var existing = await _permissionRepository.GetPermissionAsync(featureId, "ROLE", roleName);
+
+        //    if (existing != null)
+        //    {
+        //        existing.Val = true;
+        //        return await _permissionRepository.UpdatePermissionAsync(existing);
+        //    }
+        //    else
+        //    {
+        //        var newPerm = new FeaturePermission
+        //        {
+        //            FeatureId = featureId,
+        //            AccessLevel = "ROLE",
+        //            AccessId = roleName,
+        //            Val = true
+        //        };
+        //        await _permissionRepository.CreatePermissionAsync(newPerm);
+        //        return true;
+        //    }
+        //}
 
         public async Task<bool> AssignFeatureToRoleAsync(string roleName, int featureId)
         {
@@ -106,7 +142,8 @@ namespace FeatureFlagAPI.Services
             if (existing != null)
             {
                 existing.Val = true;
-                return await _permissionRepository.UpdatePermissionAsync(existing);
+                var result = await _permissionRepository.UpdatePermissionAsync(existing);
+                return result;  
             }
             else
             {
@@ -118,34 +155,9 @@ namespace FeatureFlagAPI.Services
                     Val = true
                 };
                 await _permissionRepository.CreatePermissionAsync(newPerm);
-                return true;
+                return true;  
             }
         }
-
-        //public async Task<PermissionBreakdownDto> GetPermissionBreakdownAsync(
-        //    int featureId, int userId, string userRole, string userRegion)
-        //{
-        //    var feature = await _featureRepository.GetFeatureByIdAsync(featureId);
-        //    var affectingPermissions = await _permissionRepository.GetUserAffectingPermissionsAsync(
-        //        userId, userRole, userRegion);
-
-            //    var featurePerms = affectingPermissions.Where(p => p.FeatureId == featureId).ToList();
-            //    var isGranted = await _permissionRepository.GetUserEffectivePermissionAsync(
-            //        featureId, userId, userRole, userRegion);
-
-            //    return new PermissionBreakdownDto
-            //    {
-            //        FeatureId = featureId,
-            //        FeatureName = feature?.FeatureName ?? $"Feature-{featureId}",
-            //        FeatureCode = feature?.FeatureCode ?? "",
-            //        UserLevel = featurePerms.FirstOrDefault(p => p.AccessLevel == "USER" && p.AccessId == userId.ToString())?.Val,
-            //        RoleLevel = featurePerms.FirstOrDefault(p => p.AccessLevel == "ROLE" && p.AccessId == userRole)?.Val,
-            //        RegionLevel = featurePerms.FirstOrDefault(p => p.AccessLevel == "COUNTRY" && p.AccessId == userRegion)?.Val,
-            //        GlobalLevel = featurePerms.FirstOrDefault(p => p.AccessLevel == "GLOBAL" && p.AccessId == "1")?.Val,
-            //        EffectivePermission = isGranted
-            //    };
-            //}
-
 
         public async Task<PermissionBreakdownDto> GetPermissionBreakdownAsync(
             int featureId, int userId, string userRole, string userRegion)
@@ -172,6 +184,29 @@ namespace FeatureFlagAPI.Services
             };
         }
 
+        //public async Task<bool> UpsertPermissionAsync(int featureId, string accessLevel, string accessId, bool val)
+        //{
+        //    var existing = await _permissionRepository.GetPermissionAsync(featureId, accessLevel, accessId);
+
+        //    if (existing != null)
+        //    {
+        //        existing.Val = val;
+        //        return await _permissionRepository.UpdatePermissionAsync(existing);
+        //    }
+        //    else
+        //    {
+        //        var newPerm = new FeaturePermission
+        //        {
+        //            FeatureId = featureId,
+        //            AccessLevel = accessLevel,
+        //            AccessId = accessId,
+        //            Val = val
+        //        };
+        //        await _permissionRepository.CreatePermissionAsync(newPerm);
+        //        return true;
+        //    }
+        //}
+
         public async Task<bool> UpsertPermissionAsync(int featureId, string accessLevel, string accessId, bool val)
         {
             var existing = await _permissionRepository.GetPermissionAsync(featureId, accessLevel, accessId);
@@ -179,7 +214,8 @@ namespace FeatureFlagAPI.Services
             if (existing != null)
             {
                 existing.Val = val;
-                return await _permissionRepository.UpdatePermissionAsync(existing);
+                var result = await _permissionRepository.UpdatePermissionAsync(existing);
+                return result; 
             }
             else
             {
@@ -191,7 +227,7 @@ namespace FeatureFlagAPI.Services
                     Val = val
                 };
                 await _permissionRepository.CreatePermissionAsync(newPerm);
-                return true;
+                return true; 
             }
         }
 
